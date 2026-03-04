@@ -872,10 +872,10 @@
   }
 
   function updatePeople() {
-    state.time += 16;
     if (state.inChat) {
       return;
     }
+    state.time += 16;
     state.people.forEach((person) => {
       person.x += person.vx;
       person.scaleX = person.vx >= 0 ? 1 : -1;
@@ -1005,16 +1005,25 @@
       memorySummary: memoryText,
       conversationHistory: recent
     };
-    const res = await fetch(API_BASE + "/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) {
-      throw new Error(`chat_api_${res.status}`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    try {
+      const res = await fetch(API_BASE + "/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      if (!res.ok) {
+        throw new Error(`chat_api_${res.status}`);
+      }
+      const data = await res.json();
+      return data.reply || "我有点走神了，你再说一次？";
+    } catch (err) {
+      clearTimeout(timeout);
+      throw err;
     }
-    const data = await res.json();
-    return data.reply || "我有点走神了，你再说一次？";
   }
 
   async function requestAIWithRetry(characterRole, userText, turns, memoryText, attempts = 3) {
@@ -1146,7 +1155,7 @@
 
     setThinking(true);
     try {
-      const greetingPromise = requestAIWithRetry(person.profile, "__GREETING__", turns, memoryForPrompt, 3);
+      const greetingPromise = requestAIWithRetry(person.profile, "__GREETING__", turns, memoryForPrompt, 2);
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("slow")), 5000));
       const rawGreeting = await Promise.race([greetingPromise, timeoutPromise]);
       const { cleanReply, suggestions } = parseSuggestions(rawGreeting);
@@ -1327,7 +1336,7 @@
     memoryPreview.textContent = memorySummary(turns);
     setThinking(true);
     try {
-      const rawReply = await requestAIWithRetry(state.selectedPerson.profile, text, turns, memoryForPrompt, 2);
+      const rawReply = await requestAIWithRetry(state.selectedPerson.profile, text, turns, memoryForPrompt, 1);
       const { cleanReply, suggestions } = parseSuggestions(rawReply);
       appendMessage("assistant", cleanReply);
       saveTurn(characterId, "assistant", cleanReply);
@@ -1374,18 +1383,20 @@
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
       this.ctx = new AudioCtx();
-      const bufSize = 4096;
-      const brownCoeffs = new Float32Array(2);
-
-      const noiseNode = this.ctx.createScriptProcessor(bufSize, 1, 1);
-      noiseNode.onaudioprocess = (e) => {
-        const out = e.outputBuffer.getChannelData(0);
-        for (let i = 0; i < bufSize; i++) {
-          const white = Math.random() * 2 - 1;
-          brownCoeffs[0] = (brownCoeffs[0] + 0.02 * white) * 0.98;
-          out[i] = brownCoeffs[0] * 3.5;
-        }
-      };
+      const sampleRate = this.ctx.sampleRate;
+      const duration = 4;
+      const length = sampleRate * duration;
+      const buffer = this.ctx.createBuffer(1, length, sampleRate);
+      const data = buffer.getChannelData(0);
+      let lastOut = 0;
+      for (let i = 0; i < length; i++) {
+        const white = Math.random() * 2 - 1;
+        lastOut = (lastOut + 0.02 * white) * 0.98;
+        data[i] = lastOut * 3.5;
+      }
+      const src = this.ctx.createBufferSource();
+      src.buffer = buffer;
+      src.loop = true;
 
       const lpf = this.ctx.createBiquadFilter();
       lpf.type = "lowpass";
@@ -1399,10 +1410,11 @@
       this.gainNode = this.ctx.createGain();
       this.gainNode.gain.value = 0.18;
 
-      noiseNode.connect(lpf);
+      src.connect(lpf);
       lpf.connect(hpf);
       hpf.connect(this.gainNode);
       this.gainNode.connect(this.ctx.destination);
+      src.start();
       this.running = true;
     },
     setVolume(v) {

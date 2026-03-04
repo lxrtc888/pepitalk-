@@ -253,8 +253,8 @@ h1 {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  font-size: 14px;
-  line-height: 1.65;
+  font-size: 16px;
+  line-height: 1.7;
   overflow-wrap: anywhere;
   word-break: break-word;
   -webkit-overflow-scrolling: touch;
@@ -345,8 +345,8 @@ h1 {
   color: #3b5998;
   border: 1px solid #d4ddf7;
   border-radius: 999px;
-  padding: 5px 12px;
-  font-size: 12px;
+  padding: 7px 14px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
@@ -369,7 +369,8 @@ input {
   flex: 1;
   border: 1px solid #d6d9d9;
   border-radius: 8px;
-  padding: 10px;
+  padding: 10px 12px;
+  font-size: 16px;
   outline: none;
 }
 
@@ -496,8 +497,15 @@ button:hover {
     white-space: nowrap;
   }
 
-  input,
-  .chat-log,
+  input {
+    font-size: 16px;
+  }
+
+  .chat-log {
+    font-size: 16px;
+    line-height: 1.75;
+  }
+
   .profile-list,
   .profile-detail {
     font-size: 14px;
@@ -505,9 +513,12 @@ button:hover {
 
   .muted,
   .memory-preview,
-  .chat-status,
+  .chat-status {
+    font-size: 13px;
+  }
+
   .profile-chip {
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .top-actions {
