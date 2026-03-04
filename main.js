@@ -28,6 +28,10 @@
   const CHARACTER_REGISTRY_KEY = "crowdlife_character_registry_v1";
   const userId = "local-user-001";
   const SPRITE_SOURCE_FILE = "crowd_animation.html";
+
+  const API_BASE = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+    ? ""
+    : (window.__PEPITALK_API__ || "");
   const SPEED_MULTIPLIER = 1.2;
   const QUOTES = [
     "今天也许会遇见一句改变心情的话。",
@@ -1001,7 +1005,7 @@
       memorySummary: memoryText,
       conversationHistory: recent
     };
-    const res = await fetch("/api/chat", {
+    const res = await fetch(API_BASE + "/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)

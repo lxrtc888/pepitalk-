@@ -1,0 +1,7 @@
+name = "pepitalk-api"
+main = "index.js"
+compatibility_date = "2024-12-01"
+
+[vars]
+SILICONFLOW_BASE_URL = "https://api.siliconflow.cn/v1"
+SILICONFLOW_MODEL = "deepseek-ai/DeepSeek-V3"
