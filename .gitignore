@@ -1,0 +1,13 @@
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+*.png
+*.jpg
+*.jpeg
+_fix*.js
+_add*.js
+用这个api.md
+苏苏.md
+作者.md
+.specstory/

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>CrowdLife H5 - V1 Prototype</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <h1>CrowdLife 漫画人群版</h1>
+        <div class="top-actions">
+          <button id="profile-panel-btn" class="ghost-btn" type="button">角色资料</button>
+          <button id="history-panel-btn" class="ghost-btn" type="button">交互记录</button>
+        </div>
+      </header>
+
+      <section class="scene-wrap">
+        <canvas id="crowd-canvas" aria-label="人群场景"></canvas>
+        <div class="scene-hint">点击人物可互动</div>
+        <div id="hero-quote" class="hero-quote"></div>
+      </section>
+
+      <section id="chat-modal" class="chat-modal hidden" aria-live="polite">
+        <div class="chat-modal-card">
+          <button id="chat-close-btn" class="ghost-btn chat-close" type="button">返回人群</button>
+          <img id="chat-avatar" class="chat-avatar" alt="角色头像" />
+          <div class="chat-meta">
+            <strong id="chat-name">角色</strong>
+            <p id="chat-traits" class="muted"></p>
+          </div>
+          <div id="memory-preview" class="memory-preview hidden"></div>
+          <div id="chat-log" class="chat-log"></div>
+          <div id="chat-status" class="chat-status hidden">正在回复...</div>
+
+          <div id="quick-replies" class="quick-replies">
+            <button type="button" class="quick-btn" data-msg="你好呀~">你好呀~</button>
+            <button type="button" class="quick-btn" data-msg="最近在忙什么呢？">最近在忙什么</button>
+            <button type="button" class="quick-btn" data-msg="能跟我讲讲你的故事吗？">讲讲你的故事</button>
+            <button type="button" class="quick-btn" data-msg="今天心情怎么样？">今天心情如何</button>
+            <button type="button" class="quick-btn" data-msg="有什么推荐的吗？">有什么推荐</button>
+          </div>
+
+          <form id="chat-form" class="chat-form">
+            <input id="chat-input" type="text" placeholder="和 TA 说点什么..." autocomplete="off" />
+            <button type="submit">发送</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="history-panel" class="history-panel hidden">
+        <div class="history-card">
+          <div class="history-head">
+            <h2>交互记录</h2>
+            <button id="history-close-btn" class="ghost-btn" type="button">关闭</button>
+          </div>
+          <div id="history-list" class="history-list"></div>
+        </div>
+      </section>
+
+      <section id="profile-panel" class="profile-panel hidden">
+        <div class="profile-card">
+          <div class="profile-head">
+            <h2>角色资料面板</h2>
+            <button id="profile-close-btn" class="ghost-btn" type="button">关闭</button>
+          </div>
+          <div class="profile-row">
+            <input id="profile-query" type="text" placeholder="搜索角色名或职业" />
+            <button id="profile-query-btn" type="button">查找</button>
+          </div>
+          <div id="profile-list" class="profile-list"></div>
+          <div id="profile-detail" class="profile-detail"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./main.js"></script>
+  </body>
+</html>
