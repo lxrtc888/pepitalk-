@@ -1107,7 +1107,7 @@
   }
 
 
-  async function openChat(person) {
+  async function openChat(person, fromHistory) {
     state.selectedPerson = person;
     state.inChat = true;
     ambientAudio.setVolume(0.05);
@@ -1127,10 +1127,22 @@
     memoryPreview.textContent = memorySummary(turns);
     memoryPreview.classList.remove("hidden");
 
+    if (fromHistory && turns.length > 0) {
+      const recentTurns = turns.slice(-20);
+      recentTurns.forEach((t) => {
+        appendMessage(t.role, t.content);
+      });
+    }
+
     updateQuickReplies(null);
 
     await new Promise((resolve) => setTimeout(resolve, 120));
     chatModal.classList.remove("hidden");
+
+    if (fromHistory && turns.length > 0) {
+      chatLog.scrollTop = chatLog.scrollHeight;
+      return;
+    }
 
     setThinking(true);
     try {
@@ -1176,12 +1188,17 @@
   function getChattedCharacters() {
     const store = getMemoryStore();
     const results = [];
-    state.registry.forEach((profile) => {
-      const key = memoryKey(profile.id);
-      const turns = store[key] || [];
-      if (turns.length === 0) return;
+    const prefix = userId + ":";
+    Object.keys(store).forEach((storeKey) => {
+      if (!storeKey.startsWith(prefix)) return;
+      const charId = storeKey.slice(prefix.length);
+      const turns = store[storeKey];
+      if (!Array.isArray(turns) || turns.length === 0) return;
+      const profile = state.registry.find((p) => p.id === charId);
+      if (!profile) return;
       const lastTurn = turns[turns.length - 1];
-      const lastMsg = lastTurn.content.length > 28 ? lastTurn.content.slice(0, 28) + "..." : lastTurn.content;
+      const rawMsg = lastTurn.content || "";
+      const lastMsg = rawMsg.length > 28 ? rawMsg.slice(0, 28) + "..." : rawMsg;
       results.push({
         profile,
         turnCount: turns.length,
@@ -1262,7 +1279,7 @@
   function openChatFromHistory(profile) {
     const person = state.people.find((p) => p.profile.id === profile.id);
     if (person) {
-      openChat(person);
+      openChat(person, true);
       return;
     }
     const virtualPerson = {
@@ -1287,7 +1304,7 @@
       reactingUntil: 0,
       hasUserSpoken: false
     };
-    openChat(virtualPerson);
+    openChat(virtualPerson, true);
   }
 
   canvas.addEventListener("click", onCanvasTap);
