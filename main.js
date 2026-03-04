@@ -32,7 +32,7 @@
   const API_BASE = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
     ? ""
     : (window.__PEPITALK_API__ || "");
-  const SPEED_MULTIPLIER = 1.2;
+  const SPEED_MULTIPLIER = 1.6;
   const QUOTES = [
     "今天也许会遇见一句改变心情的话。",
     "先打个招呼，故事就开始了。",
@@ -1143,7 +1143,9 @@
       if (suggestions) updateQuickReplies(suggestions);
     } catch (_error) {
       const name = person.profile.name;
-      appendMessage("assistant", `${name}看来似乎现在正忙唷，要不先跟TA打声招呼~`);
+      const fallback = `${name}看来似乎现在正忙唷，要不先跟TA打声招呼~`;
+      appendMessage("assistant", fallback);
+      saveTurn(person.profile.id, "assistant", fallback);
     } finally {
       setThinking(false);
     }
