@@ -581,9 +581,11 @@
     const memory = retrieveMemory(profile.id);
     const latest = memory.slice(-4).map((t) => `${t.role === "user" ? "你" : "TA"}: ${t.content}`).join("\n");
     const friendsList = (profile.friends || []).map((f) => `${f.name}(${f.relation}, ${f.job})`).join("、") || "暂无";
-    profileDetail.textContent = [
+    profileDetail.innerHTML = "";
+    const infoText = document.createElement("div");
+    infoText.style.whiteSpace = "pre-wrap";
+    infoText.textContent = [
       `姓名: ${profile.name}`,
-      `角色ID: ${profile.id}`,
       `职业: ${profile.job}`,
       `核心性格: ${profile.personality}`,
       `说话风格: ${profile.speakingStyle}`,
@@ -591,11 +593,22 @@
       `兴趣标签: ${profile.trait}`,
       `人物简介: ${profile.bio}`,
       `社会关系: ${friendsList}`,
-      `累计记忆条数: ${turns}`,
+      `累计对话: ${turns}条`,
       "",
       "最近记忆:",
       latest || "暂无"
     ].join("\n");
+    profileDetail.appendChild(infoText);
+
+    const chatBtn = document.createElement("button");
+    chatBtn.type = "button";
+    chatBtn.className = "profile-chat-btn";
+    chatBtn.textContent = `跟${profile.name}聊聊`;
+    chatBtn.addEventListener("click", () => {
+      profilePanel.classList.add("hidden");
+      openChatFromHistory(profile);
+    });
+    profileDetail.appendChild(chatBtn);
   }
 
   function renderProfileList(keyword = "") {

@@ -332,6 +332,26 @@ h1 {
   line-height: 1.5;
 }
 
+.profile-chat-btn {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px;
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-chat-btn:hover {
+  background: #333;
+  transform: translateY(-1px);
+}
+
 .quick-replies {
   display: flex;
   gap: 6px;
@@ -393,6 +413,13 @@ button:hover {
 .ghost-btn {
   background: #ebeeee;
   color: #232626;
+}
+
+.explore-trigger {
+  background: #1a1a2e;
+  color: #c0c8ff;
+  border: 1px solid rgba(120, 140, 220, 0.3);
+  font-weight: 600;
 }
 
 .memory-preview {

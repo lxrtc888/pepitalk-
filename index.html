@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>陪陪说 PepiTalk</title>
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./explore.css" />
   </head>
   <body>
     <main class="app">
@@ -13,6 +14,7 @@
         <div class="top-actions">
           <button id="profile-panel-btn" class="ghost-btn" type="button">角色资料</button>
           <button id="history-panel-btn" class="ghost-btn" type="button">交互记录</button>
+          <button id="explore-mode-btn" class="ghost-btn explore-trigger" type="button">探索模式</button>
         </div>
       </header>
 
@@ -73,6 +75,32 @@
           <div id="profile-detail" class="profile-detail"></div>
         </div>
       </section>
+
+      <section id="explore-panel" class="explore-panel hidden">
+        <div class="explore-container">
+          <div class="explore-header">
+            <h2>探索模式</h2>
+            <button id="explore-close-btn" class="explore-close-btn" type="button">返回人群</button>
+          </div>
+          <div id="explore-story-list" class="explore-story-list"></div>
+          <div id="explore-adventure" class="explore-adventure hidden">
+            <div class="explore-adv-header">
+              <div class="explore-adv-header-info">
+                <p id="explore-adv-title" class="explore-adv-title"></p>
+                <p id="explore-adv-act" class="explore-adv-act"></p>
+              </div>
+              <button id="explore-adv-back" class="explore-adv-back" type="button">故事列表</button>
+            </div>
+            <div id="explore-adv-log" class="explore-adv-log"></div>
+            <div id="explore-adv-choices" class="explore-adv-choices"></div>
+            <div id="explore-adv-status" class="explore-adv-status hidden"></div>
+            <form id="explore-adv-form" class="explore-adv-form">
+              <input id="explore-adv-input" type="text" placeholder="自由输入你的行动..." autocomplete="off" />
+              <button type="submit">行动</button>
+            </form>
+          </div>
+        </div>
+      </section>
     </main>
 
     <script>
@@ -80,5 +108,6 @@
       window.__PEPITALK_API__ = "";
     </script>
     <script src="./main.js"></script>
+    <script src="./explore.js"></script>
   </body>
 </html>

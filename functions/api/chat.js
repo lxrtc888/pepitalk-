@@ -5,6 +5,55 @@ function json(code, payload) {
   });
 }
 
+function buildExploreSystemPrompt(story) {
+  const lines = [
+    "你是一位专业的互动小说叙事者（Game Master），正在主持一场文字冒险游戏。",
+    "",
+    `=== 当前故事 ===`,
+    `故事名：${story.title}`,
+    `类型：${story.type}`,
+    `故事简介：${story.synopsis}`,
+    `关键NPC：${story.npcs?.join("、") || "无"}`,
+    `当前进度：第${story.currentAct}幕 / 共${story.totalActs}幕`,
+    `当前幕标题：${story.actTitle}`,
+    "",
+    `=== 本幕叙事指导（内部参考，不要直接复述给玩家）===`,
+    story.actGuidance || "自由推进剧情。",
+    "",
+    `=== 玩家已做出的选择历史 ===`,
+    story.choiceHistory || "暂无",
+    "",
+    `=== 已发现的线索 ===`,
+    story.cluesFound || "暂无",
+    "",
+    "=== 叙事规则（严格遵守）===",
+    "1) 你是全知叙事者+NPC。用第二人称描述场景（\"你看到...\"\"你听到...\"），NPC说话用引号。",
+    "2) 每次回复包含：场景描写（2-4句）+ NPC对话（如有）+ 最后给出2-4个选择项。",
+    "3) 选择项格式必须是：A. 选项内容 B. 选项内容 C. 选项内容（每行一个，字母+英文句号+空格+内容）",
+    "4) 控制节奏：前期铺垫+中期紧张+后期高潮。不要一下子揭示所有真相。",
+    "5) 保持悬疑感和代入感。描写要有画面感，调动感官（视觉、听觉、触觉、嗅觉）。",
+    "6) 回复长度控制在150-300字之间。不要太短（没有代入感）也不要太长（读不完）。",
+    "7) NPC要有性格特征和说话风格，不要千篇一律。",
+    "8) 如果玩家自由输入而非选择选项，灵活响应并引导回主线。",
+    "9) 如果故事接近结局（第4幕），在适当时机用[结局]标记收束剧情，给出有意义的结局。",
+    "10) 不要输出你的思考过程、旁白解释、或任何打破第四面墙的内容。",
+    "11) 回复中可以用[场景]、[线索]、[对话]标签来标记不同内容类型，增加阅读层次。",
+    "12) 每个选择项之间必须有实质差异，避免\"正确答案陷阱\"——每条路都有不同的有趣展开。",
+    "",
+    "=== 输出格式示例 ===",
+    "[场景] 描写当前环境和氛围的2-4句话。",
+    "",
+    "[对话] NPC的对话内容。",
+    "",
+    "叙事推进的描述。",
+    "",
+    "A. 第一个选择",
+    "B. 第二个选择",
+    "C. 第三个选择"
+  ];
+  return lines.join("\n");
+}
+
 function getWorldLore(characterId) {
   const loreSets = {
     "char-006": ["[深夜便利店] 你知道城南那家24小时便利店的事。有天凌晨3点你去买水，看到货架上的东西自己整齐地排好了但店里明明没人。你觉得可能是看花眼了但心里还是有点毛。"],
@@ -119,12 +168,28 @@ export async function onRequestPost(context) {
 
   try {
     const payload = await request.json();
-    const systemPrompt = buildSystemPrompt(payload.character || {}, payload.turnCount || 0);
-    const userPrompt = [
-      `记忆摘要：${payload.memorySummary || "无"}`,
-      `最近历史：\n${payload.conversationHistory || "无"}`,
-      `用户输入：${payload.userText || ""}`
-    ].join("\n\n");
+    const isExplore = payload.mode === "explore";
+
+    let systemPrompt, userPrompt, maxTokens, temperature;
+
+    if (isExplore) {
+      systemPrompt = buildExploreSystemPrompt(payload.story || {});
+      userPrompt = [
+        `最近对话历史：\n${payload.conversationHistory || "无"}`,
+        `玩家行动：${payload.userAction || ""}`
+      ].join("\n\n");
+      maxTokens = 600;
+      temperature = 0.82;
+    } else {
+      systemPrompt = buildSystemPrompt(payload.character || {}, payload.turnCount || 0);
+      userPrompt = [
+        `记忆摘要：${payload.memorySummary || "无"}`,
+        `最近历史：\n${payload.conversationHistory || "无"}`,
+        `用户输入：${payload.userText || ""}`
+      ].join("\n\n");
+      maxTokens = 320;
+      temperature = 0.7;
+    }
 
     const baseUrl = env.SILICONFLOW_BASE_URL || "https://api.siliconflow.cn/v1";
     const model = env.SILICONFLOW_MODEL || "deepseek-ai/DeepSeek-V3";
@@ -137,8 +202,8 @@ export async function onRequestPost(context) {
       },
       body: JSON.stringify({
         model,
-        temperature: 0.7,
-        max_tokens: 320,
+        temperature,
+        max_tokens: maxTokens,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
