@@ -520,6 +520,15 @@
   flex-shrink: 0;
 }
 
+/* ====== Hidden override (explore.css loads after styles.css) ====== */
+.explore-panel.hidden,
+.explore-story-list.hidden,
+.explore-detail.hidden,
+.explore-adventure.hidden,
+.explore-adv-status.hidden {
+  display: none !important;
+}
+
 /* ====== Mobile ====== */
 @media (max-width: 768px) {
   .explore-story-list {
