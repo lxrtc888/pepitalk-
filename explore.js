@@ -443,6 +443,25 @@
     if (viewName === "adventure") el.adventure.classList.remove("hidden");
   }
 
+  function buildNpcAvatars(npcIds) {
+    const main = window.__pepitalkMain;
+    if (!main) return "";
+    const registry = JSON.parse(localStorage.getItem("crowdlife_character_registry_v1") || "[]");
+    const container = document.createElement("div");
+    container.className = "explore-card-avatars";
+    (npcIds || []).forEach((id) => {
+      const profile = registry.find((p) => p.id === id);
+      if (!profile) return;
+      const img = document.createElement("img");
+      img.className = "explore-card-avatar";
+      img.alt = profile.name;
+      img.title = profile.name;
+      img.src = main.buildSmallAvatar(profile);
+      container.appendChild(img);
+    });
+    return container;
+  }
+
   function renderStoryList() {
     const el = getExploreElements();
     el.storyList.innerHTML = "";
@@ -457,27 +476,32 @@
       const isInProgress = progress?.status === "in_progress" && progress.turns.length > 0;
       const isCompleted = progress?.status === "completed";
       const statusText = !unlocked
-        ? `🔒 需完成${story.unlockRequires}条故事线`
+        ? `需完成${story.unlockRequires}条故事线解锁`
         : isCompleted
-        ? "✅ 已通关"
+        ? "已通关"
         : isInProgress
-        ? `▶ 进行中 · 第${(progress.currentAct || 0) + 1}幕`
+        ? `进行中 · 第${(progress.currentAct || 0) + 1}幕`
         : "待探索";
 
       const exploreBtnText = isInProgress ? "继续探索" : isCompleted ? "重新探索" : "马上探索";
 
-      card.innerHTML = `
-        <div class="explore-card-icon">${story.icon}</div>
-        <div class="explore-card-body">
-          <div class="explore-card-title">${story.title}</div>
-          <div class="explore-card-type">${story.type} · ${story.mood}</div>
-          <div class="explore-card-status">${statusText}</div>
-          ${unlocked ? `<div class="explore-card-actions">
-            <button type="button" class="explore-btn-detail">详情介绍</button>
-            <button type="button" class="explore-btn-start">${exploreBtnText}</button>
-          </div>` : ""}
-        </div>
+      const bodyDiv = document.createElement("div");
+      bodyDiv.className = "explore-card-body";
+      bodyDiv.innerHTML = `
+        <div class="explore-card-title">${story.title}</div>
+        <div class="explore-card-type">${story.type} · ${story.mood}</div>
+        <div class="explore-card-status">${statusText}</div>
+        ${unlocked ? `<div class="explore-card-actions">
+          <button type="button" class="explore-btn-detail">详情介绍</button>
+          <button type="button" class="explore-btn-start">${exploreBtnText}</button>
+        </div>` : ""}
       `;
+      card.appendChild(bodyDiv);
+
+      if (unlocked) {
+        const avatarsEl = buildNpcAvatars(story.npcIds);
+        if (avatarsEl) card.appendChild(avatarsEl);
+      }
 
       if (unlocked) {
         const detailBtn = card.querySelector(".explore-btn-detail");

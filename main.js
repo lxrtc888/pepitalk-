@@ -23,6 +23,7 @@
   const profileQueryBtn = document.getElementById("profile-query-btn");
   const profileList = document.getElementById("profile-list");
   const profileDetail = document.getElementById("profile-detail");
+  const profileActionBar = document.getElementById("profile-action-bar");
 
   const LOCAL_MEMORY_KEY = "crowdlife_local_memory_v1";
   const CHARACTER_REGISTRY_KEY = "crowdlife_character_registry_v1";
@@ -575,6 +576,8 @@
   function renderProfileDetail(profile) {
     if (!profile) {
       profileDetail.textContent = "请选择一个角色查看详细信息。";
+      profileActionBar.classList.add("hidden");
+      profileActionBar.innerHTML = "";
       return;
     }
     const turns = countTurnsForCharacter(profile.id);
@@ -600,6 +603,7 @@
     ].join("\n");
     profileDetail.appendChild(infoText);
 
+    profileActionBar.innerHTML = "";
     const chatBtn = document.createElement("button");
     chatBtn.type = "button";
     chatBtn.className = "profile-chat-btn";
@@ -608,7 +612,8 @@
       profilePanel.classList.add("hidden");
       openChatFromHistory(profile);
     });
-    profileDetail.appendChild(chatBtn);
+    profileActionBar.appendChild(chatBtn);
+    profileActionBar.classList.remove("hidden");
   }
 
   function renderProfileList(keyword = "") {
@@ -1444,6 +1449,11 @@
   }
   document.addEventListener("click", startAmbientOnInteraction);
   document.addEventListener("touchstart", startAmbientOnInteraction);
+
+  window.__pepitalkMain = {
+    buildSmallAvatar,
+    getState: () => state
+  };
 
   ensureRegistry();
   pickQuote();

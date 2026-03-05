@@ -332,10 +332,16 @@ h1 {
   line-height: 1.5;
 }
 
+.profile-action-bar {
+  flex-shrink: 0;
+  padding: 10px 0 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  margin-top: 8px;
+}
+
 .profile-chat-btn {
   display: block;
   width: 100%;
-  margin-top: 14px;
   padding: 12px;
   background: #111;
   color: #fff;
