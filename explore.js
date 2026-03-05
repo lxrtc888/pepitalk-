@@ -417,6 +417,7 @@
     return {
       panel: document.getElementById("explore-panel"),
       storyList: document.getElementById("explore-story-list"),
+      detail: document.getElementById("explore-detail"),
       adventure: document.getElementById("explore-adventure"),
       advTitle: document.getElementById("explore-adv-title"),
       advAct: document.getElementById("explore-adv-act"),
@@ -425,60 +426,121 @@
       advInput: document.getElementById("explore-adv-input"),
       advForm: document.getElementById("explore-adv-form"),
       advStatus: document.getElementById("explore-adv-status"),
+      advStatusBar: document.getElementById("explore-adv-status-bar"),
       advBack: document.getElementById("explore-adv-back"),
+      advHome: document.getElementById("explore-adv-home"),
       closeBtn: document.getElementById("explore-close-btn")
     };
+  }
+
+  function showView(viewName) {
+    const el = getExploreElements();
+    el.storyList.classList.add("hidden");
+    el.detail.classList.add("hidden");
+    el.adventure.classList.add("hidden");
+    if (viewName === "list") el.storyList.classList.remove("hidden");
+    if (viewName === "detail") el.detail.classList.remove("hidden");
+    if (viewName === "adventure") el.adventure.classList.remove("hidden");
   }
 
   function renderStoryList() {
     const el = getExploreElements();
     el.storyList.innerHTML = "";
-    el.adventure.classList.add("hidden");
-    el.storyList.classList.remove("hidden");
+    showView("list");
 
     STORY_DATA.forEach((story) => {
       const unlocked = isStoryUnlocked(story);
       const progress = getStoryProgress(story.id);
       const card = document.createElement("div");
       card.className = `explore-story-card${unlocked ? "" : " locked"}`;
-      card.style.setProperty("--story-color", story.color);
 
+      const isInProgress = progress?.status === "in_progress" && progress.turns.length > 0;
+      const isCompleted = progress?.status === "completed";
       const statusText = !unlocked
         ? `🔒 需完成${story.unlockRequires}条故事线`
-        : progress?.status === "completed"
+        : isCompleted
         ? "✅ 已通关"
-        : progress?.status === "in_progress"
+        : isInProgress
         ? `▶ 进行中 · 第${(progress.currentAct || 0) + 1}幕`
         : "待探索";
+
+      const exploreBtnText = isInProgress ? "继续探索" : isCompleted ? "重新探索" : "马上探索";
 
       card.innerHTML = `
         <div class="explore-card-icon">${story.icon}</div>
         <div class="explore-card-body">
           <div class="explore-card-title">${story.title}</div>
           <div class="explore-card-type">${story.type} · ${story.mood}</div>
-          <div class="explore-card-synopsis">${unlocked ? story.synopsis : "完成更多故事线后解锁"}</div>
-          <div class="explore-card-npcs">${unlocked ? "关键角色: " + story.npcs.join("、") : ""}</div>
           <div class="explore-card-status">${statusText}</div>
+          ${unlocked ? `<div class="explore-card-actions">
+            <button type="button" class="explore-btn-detail">详情介绍</button>
+            <button type="button" class="explore-btn-start">${exploreBtnText}</button>
+          </div>` : ""}
         </div>
       `;
 
       if (unlocked) {
-        card.addEventListener("click", () => enterStory(story));
+        const detailBtn = card.querySelector(".explore-btn-detail");
+        const startBtn = card.querySelector(".explore-btn-start");
+        if (detailBtn) detailBtn.addEventListener("click", (e) => { e.stopPropagation(); showStoryDetail(story); });
+        if (startBtn) startBtn.addEventListener("click", (e) => { e.stopPropagation(); enterStory(story); });
       }
       el.storyList.appendChild(card);
     });
   }
 
+  function showStoryDetail(story) {
+    const el = getExploreElements();
+    const progress = getStoryProgress(story.id);
+    const isInProgress = progress?.status === "in_progress" && progress.turns.length > 0;
+    const isCompleted = progress?.status === "completed";
+    const exploreBtnText = isInProgress ? "继续探索" : isCompleted ? "重新探索" : "马上探索";
+
+    const actsHtml = story.acts.map((act, i) => {
+      const actStatus = progress && progress.currentAct >= i ? "✓" : (i + 1);
+      return `<div class="detail-act-item"><span class="detail-act-num">${actStatus}</span><span>${act.title}</span></div>`;
+    }).join("");
+
+    el.detail.innerHTML = `
+      <div class="detail-card">
+        <button type="button" class="detail-back-btn" id="detail-back">← 返回列表</button>
+        <div class="detail-icon">${story.icon}</div>
+        <h3 class="detail-title">${story.title}</h3>
+        <div class="detail-meta">${story.type} · ${story.mood}</div>
+        <div class="detail-section">
+          <div class="detail-label">故事简介</div>
+          <p class="detail-text">${story.synopsis}</p>
+        </div>
+        <div class="detail-section">
+          <div class="detail-label">关键角色</div>
+          <p class="detail-text">${story.npcs.join("、")}</p>
+        </div>
+        <div class="detail-section">
+          <div class="detail-label">章节结构</div>
+          <div class="detail-acts">${actsHtml}</div>
+        </div>
+        ${progress ? `<div class="detail-section"><div class="detail-label">当前进度</div><p class="detail-text">已对话 ${progress.turns.length} 轮 · 第${(progress.currentAct || 0) + 1}幕</p></div>` : ""}
+        <button type="button" class="detail-explore-btn" id="detail-explore">${exploreBtnText}</button>
+      </div>
+    `;
+
+    showView("detail");
+
+    document.getElementById("detail-back").addEventListener("click", () => renderStoryList());
+    document.getElementById("detail-explore").addEventListener("click", () => enterStory(story));
+  }
+
   function enterStory(story) {
     currentStory = story;
     const el = getExploreElements();
-    el.storyList.classList.add("hidden");
-    el.adventure.classList.remove("hidden");
+    showView("adventure");
     el.advTitle.textContent = `${story.icon} ${story.title}`;
     el.advLog.innerHTML = "";
     el.advChoices.innerHTML = "";
 
     let progress = getStoryProgress(story.id);
+
+    updateStatusBar(story, progress);
 
     if (progress && progress.turns.length > 0) {
       el.advAct.textContent = `第${(progress.currentAct || 0) + 1}幕 · ${story.acts[progress.currentAct || 0]?.title || ""}`;
@@ -496,6 +558,19 @@
       saveTurn(story.id, "narrator", act.opening);
       requestExploreAI(story, progress, "__OPENING__");
     }
+  }
+
+  function updateStatusBar(story, progress) {
+    const el = getExploreElements();
+    if (!el.advStatusBar) return;
+    const actIdx = progress?.currentAct || 0;
+    const turnCount = progress?.turns?.length || 0;
+    const dots = story.acts.map((_, i) => {
+      if (i < actIdx) return '<span class="status-dot done">●</span>';
+      if (i === actIdx) return '<span class="status-dot current">◉</span>';
+      return '<span class="status-dot">○</span>';
+    }).join("");
+    el.advStatusBar.innerHTML = `<span class="status-progress">${dots}</span><span class="status-info">对话 ${turnCount} 轮</span>`;
   }
 
   function appendAdventureMessage(role, content, logEl) {
@@ -652,6 +727,7 @@
       }
 
       checkActProgression(story, progress, narrativeText);
+      updateStatusBar(story, getStoryProgress(story.id));
     } catch (err) {
       clearTimeout(timeout);
       const fallback = "叙事者被什么东西分了神...请稍后再试。";
@@ -680,6 +756,11 @@
     }
   }
 
+  function leaveAdventure() {
+    if (abortController) abortController.abort();
+    currentStory = null;
+  }
+
   function initExploreUI() {
     const exploreBtn = document.getElementById("explore-mode-btn");
     if (!exploreBtn) return;
@@ -694,18 +775,26 @@
     const closeBtn = document.getElementById("explore-close-btn");
     if (closeBtn) {
       closeBtn.addEventListener("click", () => {
+        leaveAdventure();
         const el = getExploreElements();
         el.panel.classList.add("hidden");
-        currentStory = null;
       });
     }
 
     const advBack = document.getElementById("explore-adv-back");
     if (advBack) {
       advBack.addEventListener("click", () => {
-        currentStory = null;
-        if (abortController) abortController.abort();
+        leaveAdventure();
         renderStoryList();
+      });
+    }
+
+    const advHome = document.getElementById("explore-adv-home");
+    if (advHome) {
+      advHome.addEventListener("click", () => {
+        leaveAdventure();
+        const el = getExploreElements();
+        el.panel.classList.add("hidden");
       });
     }
 
