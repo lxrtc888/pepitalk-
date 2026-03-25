@@ -84,3 +84,39 @@
 #### How did we fix these issues?
 - 编写 Node.js 脚本 `_add_deep.js` 通过 indexOf 精确定位每个角色的 `friends: []` 行前插入 deepPersonality 字段，执行后删除脚本。
 - PowerShell 中使用 `;` 替代 `&&` 来链接命令。
+
+## 2026-03-09
+
+### What did we implement?
+- Added .planning/GAMEPLAY_TODO.md as the long-term gameplay and experience optimization checklist.
+- Structured the checklist around three major directions: realistic social normal mode, more professional explore mode, and cross-mode integration.
+- Added checkbox-based tracking rules so future updates can be marked in one place and recorded back into work tracking.
+- Added `.planning/CORE_CHARACTER_CARDS_V1.md` with six priority character cards for content and gameplay alignment.
+- Finalized V1 content baselines for: 陈小夜、林小夏、吴晚秋、沈听澜、方小圆、苏绵.
+- Marked the corresponding item in `.planning/GAMEPLAY_TODO.md` as completed.
+- Added `.planning/NORMAL_MODE_UPGRADE_V1.md` to define the normal-mode product upgrade from passive chat into an online social space.
+- Documented V1 rules for proactive character contact, lightweight pass-by interactions, daily status, user social impression, relationship state, and cross-character weak links.
+- Marked the corresponding normal-mode planning item in `.planning/GAMEPLAY_TODO.md` as completed.
+- Added `.planning/EXPLORE_CONVENIENCE_STORE_V1.md` as the professional explore-mode story skeleton for `深夜便利店`.
+- Defined the story's four-act structure, character roles, key choice consequences, reversal design, ending directions, and cross-mode integration hooks.
+- Marked the corresponding convenience-store explore planning item in `.planning/GAMEPLAY_TODO.md` as completed.
+- Added `.planning/NORMAL_MODE_SOCIAL_SYSTEM_V1.md` to define the normal-mode social system in a more executable form.
+- Documented V1 rules for relationship states, user social impressions, six-character proactive trigger scenes, and frequency strategies.
+- Marked the corresponding normal-mode social-system planning item in `.planning/GAMEPLAY_TODO.md` as completed.
+- Added `.planning/PROACTIVE_MESSAGE_PACK_V1.md` as the first proactive-message sample pack for the six core characters.
+- Wrote V1 proactive dialogue examples for 陈小夜、林小夏、吴晚秋、沈听澜、方小圆、苏绵, grouped by scene type and tone boundaries.
+- Marked the corresponding proactive-message planning item in `.planning/GAMEPLAY_TODO.md` as completed.
+- Added `.planning/SHARED_WORLD_LINKS_V1.md` to define the first shared-world content pool for public places, rumors, and weak-link dialogue.
+- Built V1 shared content around six recurring locations, four recurring rumors, and multi-character weak-link line patterns.
+- Marked the corresponding shared-world planning item in `.planning/GAMEPLAY_TODO.md` as completed.
+- Added `.planning/USER_SOCIAL_IMPRESSION_MATRIX_V1.md` to formalize how users are perceived by characters in the social layer.
+- Defined V1 impression categories, major user impression labels, cross-character interpretation differences, and how impressions influence proactive messages and story entry.
+- Marked the corresponding user-impression planning item in `.planning/GAMEPLAY_TODO.md` as completed.
+- Added `.planning/EXPLORE_CONVENIENCE_STORE_SCENES_V1.md` to detail the scene-by-scene explore-mode script structure for `深夜便利店`.
+- Added `.planning/EXPLORE_MISSING_PAINTER_V1.md` as the second major explore-mode story skeleton with theme, act structure, role split, reversal design, and endings.
+- Marked the corresponding convenience-store scene-script item and missing-painter explore item in `.planning/GAMEPLAY_TODO.md` as completed.
+
+### What did we implement next?
+- Added a new character `超级峰` into the default role registry in `main.js`.
+- Mapped the content from `超级峰.md` into the project's existing character fields: `personality`, `speakingStyle`, `trait`, `bio`, and `deepPersonality`.
+- Bumped `REGISTRY_VERSION` from `v5` to `v6` so existing local caches refresh and load the new character roster.

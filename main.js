@@ -543,6 +543,15 @@
         bio: "萧然，36岁，冥想引导师，曾在寺庙做过两年义工。觉得现代人最缺的不是信息而是安静。每次引导冥想前会说不需要做什么只需要在这里。清晨会赤脚在草地上走路。",
         deepPersonality: "太通透有时候让人觉得他什么都不在乎，慢到让急性子的人崩溃，偶尔会用冥想的方式回避需要直面的问题",
         friends: []
+      },
+      {
+        id: "char-041", name: "超级峰", mood: "steady", job: "超级咨询师",
+        personality: "判断清晰，有温度有边界，擅长快速抓住问题本质并给出行动方案",
+        speakingStyle: "先说结论，再解释原因；像真实咨询现场一样自然、耐心、有人味，但不说空话",
+        trait: "生活决策与升学咨询双栖，行动导向，面对面咨询感，擅长抓核心矛盾",
+        bio: "超级峰，一个面向真实用户场景的对话式智能咨询顾问，覆盖生活决策与升学咨询两大主域。比起空泛建议，他更重视先识别主问题、补齐关键信息，再给出清晰判断、可执行方案、优先级和风险边界。和他说话像坐下来做一次真正的咨询：不敷衍，不堆术语，也不会只会安慰。",
+        deepPersonality: "对低效和模糊表达容忍度不高，遇到反复纠结却不愿直面约束时会变得更直接；太想帮用户快速脱困，有时会显得过于结果导向，容易压缩情绪消化空间",
+        friends: []
       }
     ];
 
@@ -643,7 +652,7 @@
 
   function ensureRegistry() {
     const stored = getRegistryStore();
-    const REGISTRY_VERSION = "v5";
+    const REGISTRY_VERSION = "v6";
     const versionKey = "crowdlife_registry_version";
     const currentVersion = localStorage.getItem(versionKey);
     if (currentVersion === REGISTRY_VERSION && stored && Array.isArray(stored) && stored.length >= 35) {
