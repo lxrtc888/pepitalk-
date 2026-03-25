@@ -332,6 +332,51 @@ h1 {
   line-height: 1.5;
 }
 
+.profile-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-summary-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111;
+}
+
+.profile-summary-meta {
+  font-size: 13px;
+  color: #666;
+}
+
+.profile-summary-intro {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #222;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.profile-toggle-btn {
+  align-self: flex-start;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid #d0d0d0;
+  background: #fff;
+  color: #222;
+  cursor: pointer;
+}
+
+.profile-full-detail {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
 .profile-action-bar {
   flex-shrink: 0;
   padding: 10px 0 0;

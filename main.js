@@ -29,6 +29,9 @@
   const CHARACTER_REGISTRY_KEY = "crowdlife_character_registry_v1";
   const userId = "local-user-001";
   const SPRITE_SOURCE_FILE = "crowd_animation.html";
+  const TYPEWRITER_BASE_DELAY = 16;
+  const TYPEWRITER_PUNCT_DELAY = 34;
+  const TYPEWRITER_MAX_TOTAL_MS = 2200;
 
   const API_BASE = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
     ? ""
@@ -73,7 +76,9 @@
       templates: [],
       rows: 15,
       cols: 7
-    }
+    },
+    activeReplyToken: 0,
+    activeReplyTimer: null
   };
 
   class Peep {
@@ -111,6 +116,23 @@
         chatLog.scrollTop = chatLog.scrollHeight;
       }
     }
+  }
+
+  function setThinkingText(text) {
+    if (!chatStatus) return;
+    chatStatus.textContent = text;
+    chatStatus.classList.remove("hidden");
+    if (chatLog) {
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+  }
+
+  function stopActiveReplyAnimation() {
+    if (state.activeReplyTimer) {
+      clearTimeout(state.activeReplyTimer);
+      state.activeReplyTimer = null;
+    }
+    state.activeReplyToken += 1;
   }
 
   function buildDensityProfile(width, height) {
@@ -593,10 +615,35 @@
     const memory = retrieveMemory(profile.id);
     const latest = memory.slice(-4).map((t) => `${t.role === "user" ? "你" : "TA"}: ${t.content}`).join("\n");
     const friendsList = (profile.friends || []).map((f) => `${f.name}(${f.relation}, ${f.job})`).join("、") || "暂无";
+    const compactPersonality = String(profile.personality || "").split(/[，。,；;]/)[0].trim();
+    const compactTrait = String(profile.trait || "").split(/[，。,；;]/)[0].trim();
+    const compactBio = String(profile.bio || "").trim();
+    const shortBio = compactBio.length > 56 ? `${compactBio.slice(0, 56).trim()}...` : compactBio;
     profileDetail.innerHTML = "";
-    const infoText = document.createElement("div");
-    infoText.style.whiteSpace = "pre-wrap";
-    infoText.textContent = [
+    const summaryCard = document.createElement("div");
+    summaryCard.className = "profile-summary-card";
+
+    const summaryTitle = document.createElement("div");
+    summaryTitle.className = "profile-summary-title";
+    summaryTitle.textContent = `${profile.name} · ${profile.job}`;
+
+    const summaryMeta = document.createElement("div");
+    summaryMeta.className = "profile-summary-meta";
+    summaryMeta.textContent = `${compactTrait || compactPersonality} · 已聊 ${turns} 条`;
+
+    const summaryIntro = document.createElement("div");
+    summaryIntro.className = "profile-summary-intro";
+    summaryIntro.textContent = `${compactPersonality || profile.job}。${shortBio}`;
+
+    const toggleBtn = document.createElement("button");
+    toggleBtn.type = "button";
+    toggleBtn.className = "profile-toggle-btn";
+    toggleBtn.textContent = "点击查看详细资料";
+
+    const fullDetail = document.createElement("div");
+    fullDetail.className = "profile-full-detail hidden";
+    fullDetail.style.whiteSpace = "pre-wrap";
+    fullDetail.textContent = [
       `姓名: ${profile.name}`,
       `职业: ${profile.job}`,
       `核心性格: ${profile.personality}`,
@@ -605,12 +652,23 @@
       `兴趣标签: ${profile.trait}`,
       `人物简介: ${profile.bio}`,
       `社会关系: ${friendsList}`,
-      `累计对话: ${turns}条`,
       "",
       "最近记忆:",
       latest || "暂无"
     ].join("\n");
-    profileDetail.appendChild(infoText);
+
+    toggleBtn.addEventListener("click", () => {
+      const expanded = !fullDetail.classList.contains("hidden");
+      fullDetail.classList.toggle("hidden", expanded);
+      toggleBtn.textContent = expanded ? "点击查看详细资料" : "收起详细资料";
+    });
+
+    summaryCard.appendChild(summaryTitle);
+    summaryCard.appendChild(summaryMeta);
+    summaryCard.appendChild(summaryIntro);
+    summaryCard.appendChild(toggleBtn);
+    summaryCard.appendChild(fullDetail);
+    profileDetail.appendChild(summaryCard);
 
     profileActionBar.innerHTML = "";
     const chatBtn = document.createElement("button");
@@ -1083,6 +1141,159 @@
     return { cleanReply, suggestions: suggestions.length >= 2 ? suggestions.slice(0, 5) : null };
   }
 
+  function getReplyStyleProfile(profile) {
+    const speaking = String(profile?.speakingStyle || "");
+    const personality = String(profile?.personality || "");
+    const combined = `${speaking} ${personality}`;
+
+    const style = {
+      maxBursts: 2,
+      shortBurstLimit: 22,
+      joinThreshold: 30,
+      followupChance: 0.28,
+      pauseBase: 260
+    };
+
+    if (/语速极慢|留有空间|冥想|安静|湖水/.test(combined)) {
+      style.maxBursts = 2;
+      style.shortBurstLimit = 18;
+      style.joinThreshold = 24;
+      style.followupChance = 0.18;
+      style.pauseBase = 380;
+    } else if (/碎碎念|话痨|停不下|电台|很会顺着情绪接/.test(combined)) {
+      style.maxBursts = 3;
+      style.shortBurstLimit = 24;
+      style.joinThreshold = 34;
+      style.followupChance = 0.46;
+      style.pauseBase = 220;
+    } else if (/短句|克制|冷|不热络|面对面咨询感|先说结论/.test(combined)) {
+      style.maxBursts = 2;
+      style.shortBurstLimit = 20;
+      style.joinThreshold = 26;
+      style.followupChance = 0.22;
+      style.pauseBase = 240;
+    } else if (/若即若离|留白|月亮|夜晚|观察|文艺/.test(combined)) {
+      style.maxBursts = 2;
+      style.shortBurstLimit = 20;
+      style.joinThreshold = 26;
+      style.followupChance = 0.24;
+      style.pauseBase = 340;
+    }
+
+    return style;
+  }
+
+  function splitReplyIntoWechatBursts(text, profile) {
+    const normalized = String(text || "").trim();
+    if (!normalized) return [""];
+    const style = getReplyStyleProfile(profile);
+    const pieces = normalized
+      .split(/(?<=[。！？!?~～…])\s*|\n+/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    if (pieces.length <= 1) {
+      return [normalized];
+    }
+
+    const bursts = [];
+    let buffer = "";
+    pieces.forEach((piece) => {
+      const candidate = buffer ? `${buffer}${piece}` : piece;
+      if (!buffer) {
+        buffer = piece;
+        return;
+      }
+      if (buffer.length < style.shortBurstLimit || candidate.length <= style.joinThreshold) {
+        buffer = candidate;
+      } else {
+        bursts.push(buffer);
+        buffer = piece;
+      }
+    });
+    if (buffer) bursts.push(buffer);
+
+    const trimmed = bursts.slice(0, style.maxBursts);
+    if (trimmed.length <= 1) {
+      return trimmed;
+    }
+
+    const shouldKeepFollowup = normalized.length > 26 || Math.random() < style.followupChance;
+    return shouldKeepFollowup ? trimmed : [trimmed.join("")];
+  }
+
+  function createMessageElement(role, text = "") {
+    const p = document.createElement("p");
+    p.className = `msg ${role === "user" ? "msg-user" : ""}`;
+    const name = state.selectedPerson ? state.selectedPerson.profile.name : "TA";
+    p.textContent = `${role === "user" ? "你" : name}: ${text}`;
+    chatLog.appendChild(p);
+    chatLog.scrollTop = chatLog.scrollHeight;
+    return p;
+  }
+
+  function animateAssistantMessage(text, { delayBefore = 0 } = {}) {
+    stopActiveReplyAnimation();
+    const token = state.activeReplyToken;
+    const p = createMessageElement("assistant", "");
+    const name = state.selectedPerson ? state.selectedPerson.profile.name : "TA";
+    const prefix = `${name}: `;
+    const content = String(text || "");
+    const totalChars = Math.max(content.length, 1);
+    const baseDelay = Math.min(
+      TYPEWRITER_BASE_DELAY,
+      Math.max(8, Math.floor(TYPEWRITER_MAX_TOTAL_MS / totalChars))
+    );
+
+    return new Promise((resolve) => {
+      let index = 0;
+      const tick = () => {
+        if (token !== state.activeReplyToken) {
+          resolve();
+          return;
+        }
+        index += 1;
+        p.textContent = prefix + content.slice(0, index);
+        chatLog.scrollTop = chatLog.scrollHeight;
+        if (index >= content.length) {
+          state.activeReplyTimer = null;
+          resolve();
+          return;
+        }
+        const currentChar = content[index - 1];
+        const nextDelay = /[，。！？!?~～…]/.test(currentChar) ? TYPEWRITER_PUNCT_DELAY : baseDelay;
+        state.activeReplyTimer = setTimeout(tick, nextDelay);
+      };
+
+      const start = () => {
+        if (!content) {
+          p.textContent = prefix;
+          resolve();
+          return;
+        }
+        state.activeReplyTimer = setTimeout(tick, baseDelay);
+      };
+
+      if (delayBefore > 0) {
+        state.activeReplyTimer = setTimeout(start, delayBefore);
+      } else {
+        start();
+      }
+    });
+  }
+
+  async function appendAssistantReplyFlow(text) {
+    const style = getReplyStyleProfile(state.selectedPerson?.profile);
+    const bursts = splitReplyIntoWechatBursts(text, state.selectedPerson?.profile);
+    for (let i = 0; i < bursts.length; i += 1) {
+      const burst = bursts[i];
+      if (i > 0) {
+        setThinkingText(`${state.selectedPerson?.profile?.name || "对方"}：又补了一句...`);
+      }
+      await animateAssistantMessage(burst, { delayBefore: i > 0 ? style.pauseBase + i * 120 : 0 });
+    }
+  }
+
   function updateQuickReplies(suggestions) {
     const container = document.getElementById("quick-replies");
     if (!container) return;
@@ -1105,12 +1316,7 @@
   }
 
   function appendMessage(role, text) {
-    const p = document.createElement("p");
-    p.className = `msg ${role === "user" ? "msg-user" : ""}`;
-    const name = state.selectedPerson ? state.selectedPerson.profile.name : "TA";
-    p.textContent = `${role === "user" ? "你" : name}: ${text}`;
-    chatLog.appendChild(p);
-    chatLog.scrollTop = chatLog.scrollHeight;
+    createMessageElement(role, text);
   }
 
   function buildAvatarFromPerson(person) {
@@ -1363,14 +1569,22 @@
     memoryPreview.textContent = memorySummary(turns);
     setThinking(true);
     try {
-      const rawReply = await requestAIWithRetry(state.selectedPerson.profile, text, turns, memoryForPrompt, 1);
+      const reminderTimer = setTimeout(() => {
+        const name = state.selectedPerson?.profile?.name || "TA";
+        setThinkingText(`${name}：他可能现在手头正忙，我再帮你催催回复你信息...`);
+      }, 4200);
+
+      const rawReply = await requestAIWithRetry(state.selectedPerson.profile, text, turns, memoryForPrompt, 2);
+      clearTimeout(reminderTimer);
       const { cleanReply, suggestions } = parseSuggestions(rawReply);
-      appendMessage("assistant", cleanReply);
+      await appendAssistantReplyFlow(cleanReply);
       saveTurn(characterId, "assistant", cleanReply);
       if (suggestions) updateQuickReplies(suggestions);
     } catch (_error) {
-      // Keep chat clean: status only, no extra system message in chat flow.
+      const fallbackName = state.selectedPerson?.profile?.name || "TA";
+      appendMessage("assistant", `${fallbackName}：他可能现在手头正忙，我再帮你催催回复你信息。你也可以稍等一会儿，或者换个说法再发一次。`);
     } finally {
+      stopActiveReplyAnimation();
       setThinking(false);
     }
   });
